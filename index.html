@@ -1,638 +1,406 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>J.A.R.V.I.S. Tetris</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght[400,700]&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* J.A.R.V.I.S. Color Palette & Glassmorphism */
-            --primary-bg: #0d1226; /* Darker Space Blue */
-            --secondary-bg: #1a1f33; /* Slightly lighter */
-            --accent-color: #00e6e6; /* Aqua Glow */
-            --text-color: #e0e0e0; /* Light Gray */
-            --glass-bg: rgba(255, 255, 255, 0.08); /* White with low opacity */
-            --glass-border: rgba(0, 255, 255, 0.2); /* Aqua border */
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Stronger shadow */
-            --blur-effect: blur(10px);
-            --transition-speed: 0.3s ease;
-            --button-hover-bg: rgba(0, 230, 230, 0.2); /* Accent with transparency */
-            --button-active-bg: rgba(0, 230, 230, 0.4);
-            --border-radius-sm: 8px;
-            --border-radius-md: 12px;
-            --border-radius-lg: 16px;
-            --font-orbitron: 'Orbitron', sans-serif;
-            --font-roboto-mono: 'Roboto Mono', monospace;
-
-            /* Game Specific Colors */
-            --game-board-bg: rgba(0, 0, 0, 0.5); /* Darker, more transparent */
-            --game-cell-border: rgba(255, 255, 255, 0.07); /* Subtle cell borders */
-
-            /* Tetromino Colors - Vibrant and distinct */
-            --piece-color-I: #00FFFF; /* Cyan */
-            --piece-color-J: #0000FF; /* Blue */
-            --piece-color-L: #FFA500; /* Orange */
-            --piece-color-O: #FFFF00; /* Yellow */
-            --piece-color-S: #00FF00; /* Green */
-            --piece-color-T: #800080; /* Purple */
-            --piece-color-Z: #FF0000; /* Red */
-            --piece-color-ghost: rgba(255, 255, 255, 0.15); /* Lighter ghost */
-
-            /* Score/Info Colors */
-            --score-color: #00e6e6; /* Accent color */
-            --level-color: #ff69b4; /* Hot Pink */
-            --lines-color: #39ff14; /* Neon Green */
-        }
-
-        /* Base Styles */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
-        }
-
-        html, body {
-            height: 100%;
-            overflow: hidden; /* Prevent scrolling */
-        }
-
-        body {
-            font-family: var(--font-roboto-mono);
-            color: var(--text-color);
-            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            touch-action: manipulation; /* Optimize touch responsiveness */
-        }
-
-        /* Animated Background Gradient - High Aura */
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, #1a2a6c, #b21f1f, #fdbb2d);
-            background-size: 400% 400%;
-            animation: gradientAnimation 15s ease infinite;
-            z-index: -1;
-            opacity: 0.3;
-        }
-
-        @keyframes gradientAnimation {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Glassmorphism Card Style */
-        .glass-card {
-            background: var(--glass-bg);
-            border-radius: var(--border-radius-lg);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--glass-shadow);
-            backdrop-filter: var(--blur-effect);
-            -webkit-backdrop-filter: var(--blur-effect);
-            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
-        }
-
-        .glass-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 40px 0 rgba(0, 255, 255, 0.2); /* Accent glow on hover */
-        }
-
-        /* Main Container */
-        .container {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            align-items: center;
-            max-width: 1200px;
-            width: 95%;
-            padding: 20px 0;
-            margin: auto; /* Center content vertically if screen is taller */
-            max-height: 100vh; /* Ensure it doesn't overflow viewport */
-            overflow-y: auto; /* Allow scrolling if content is too tall */
-            scrollbar-width: none; /* Hide scrollbar for Firefox */
-        }
-        .container::-webkit-scrollbar {
-            display: none; /* Hide scrollbar for Chrome, Safari, Opera */
-        }
-
-        /* Header */
-        .header {
-            text-align: center;
-            padding: 20px 30px;
-            width: 100%;
-            max-width: 600px;
-            border-bottom: 2px solid var(--accent-color);
-            box-shadow: 0 0 20px rgba(0, 230, 230, 0.5); /* Header glow */
-        }
-
-        .header h1 {
-            font-family: var(--font-orbitron);
-            font-size: 2.5em;
-            color: var(--accent-color);
-            text-shadow: 0 0 10px rgba(0, 230, 230, 0.7);
-            letter-spacing: 2px;
-        }
-
-        /* Game Area Layout */
-        .game-area {
-            display: flex;
-            gap: 30px;
-            width: 100%;
-            justify-content: center;
-            flex-wrap: wrap; /* Allows wrapping on smaller screens */
-        }
-
-        /* Game Board */
-        .game-board-container {
-            flex-shrink: 0;
-            width: 300px; /* Base width for 10 cells * 30px */
-            height: 600px; /* Base height for 20 cells * 30px */
-            padding: 10px;
-            background: var(--game-board-bg);
-            border: 2px solid var(--accent-color);
-            box-shadow: inset 0 0 15px rgba(0, 230, 230, 0.5);
-            overflow: hidden; /* Important for piece rendering */
-            position: relative;
-        }
-
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(20, 1fr);
-            width: 100%;
-            height: 100%;
-            background-color: transparent; /* Actual board background */
-            border-collapse: collapse;
-        }
-
-        .cell {
-            width: 100%;
-            height: 100%;
-            background-color: transparent;
-            border: 1px solid var(--game-cell-border);
-            border-left: none;
-            border-top: none;
-            position: relative;
-            z-index: 1;
-            transition: background-color 0.1s ease;
-        }
-
-        .cell.clearing {
-            animation: lineClear 0.5s ease-out forwards;
-        }
-
-        @keyframes lineClear {
-            0% { background-color: rgba(0, 255, 255, 0.8); transform: scale(1); opacity: 1; }
-            50% { background-color: rgba(0, 255, 255, 0.4); transform: scale(1.1); opacity: 0.7; }
-            100% { background-color: transparent; transform: scale(0); opacity: 0; }
-        }
-
-        /* Piece Styling */
-        .piece {
-            background-color: gray; /* Default, should be overridden */
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5), 0 0 5px rgba(0, 0, 0, 0.3);
-            border-radius: 2px;
-            z-index: 2;
-            animation: pieceAppear 0.2s ease-out;
-        }
-
-        @keyframes pieceAppear {
-            from { transform: scale(0.5); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .piece-I { background-color: var(--piece-color-I); box-shadow: inset 0 0 8px rgba(0,255,255,0.7), 0 0 5px rgba(0,0,0,0.3); }
-        .piece-J { background-color: var(--piece-color-J); box-shadow: inset 0 0 8px rgba(0,0,255,0.7), 0 0 5px rgba(0,0,0,0.3); }
-        .piece-L { background-color: var(--piece-color-L); box-shadow: inset 0 0 8px rgba(255,165,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
-        .piece-O { background-color: var(--piece-color-O); box-shadow: inset 0 0 8px rgba(255,255,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
-        .piece-S { background-color: var(--piece-color-S); box-shadow: inset 0 0 8px rgba(0,255,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
-        .piece-T { background-color: var(--piece-color-T); box-shadow: inset 0 0 8px rgba(128,0,128,0.7), 0 0 5px rgba(0,0,0,0.3); }
-        .piece-Z { background-color: var(--piece-color-Z); box-shadow: inset 0 0 8px rgba(255,0,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
-
-        .ghost-piece {
-            background-color: var(--piece-color-ghost);
-            border: 1px dashed var(--accent-color);
-            opacity: 0.7;
-            z-index: 0; /* Below actual pieces */
-        }
-
-        /* Sidebar */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            width: 200px; /* Fixed width for sidebar */
-            flex-shrink: 0;
-        }
-
-        .info-panel {
-            padding: 15px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100px;
-        }
-
-        .info-panel h2 {
-            font-family: var(--font-orbitron);
-            font-size: 1.2em;
-            color: var(--accent-color);
-            margin-bottom: 10px;
-            text-shadow: 0 0 5px rgba(0, 230, 230, 0.5);
-        }
-
-        .info-panel p {
-            font-family: var(--font-roboto-mono);
-            font-size: 1.8em;
-            font-weight: bold;
-            color: var(--text-color);
-        }
-
-        #score-display { color: var(--score-color); text-shadow: 0 0 8px var(--score-color); }
-        #level-display { color: var(--level-color); text-shadow: 0 0 8px var(--level-color); }
-        #lines-display { color: var(--lines-color); text-shadow: 0 0 8px var(--lines-color); }
-
-        /* Next Piece Display */
-        #next-piece-display {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-            width: 100px; /* Fixed size for next piece grid */
-            height: 100px;
-            background-color: rgba(0, 0, 0, 0.3);
-            border-radius: var(--border-radius-sm);
-            border: 1px solid var(--glass-border);
-            margin-top: 10px;
-        }
-        #next-piece-display .cell {
-            border: none; /* No borders in next piece display */
-            background-color: transparent !important; /* Ensure no background for empty cells */
-        }
-
-        /* Controls */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            padding: 20px;
-        }
-
-        .control-button {
-            background-color: var(--accent-color);
-            color: var(--primary-bg); /* Dark text on bright button */
-            border: none;
-            border-radius: var(--border-radius-sm);
-            padding: 12px 20px;
-            font-family: var(--font-orbitron);
-            font-size: 1.1em;
-            cursor: pointer;
-            outline: none;
-            transition: background-color var(--transition-speed), transform 0.1s ease, box-shadow var(--transition-speed);
-            box-shadow: 0 4px 15px rgba(0, 230, 230, 0.4);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .control-button:hover:not(:disabled) {
-            background-color: var(--button-hover-bg);
-            color: var(--accent-color); /* Bright text on darker hover */
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 6px 20px rgba(0, 230, 230, 0.6);
-        }
-
-        .control-button:active:not(:disabled) {
-            background-color: var(--button-active-bg);
-            transform: translateY(0) scale(0.98);
-            box-shadow: 0 2px 10px rgba(0, 230, 230, 0.3);
-        }
-
-        .control-button:disabled {
-            background-color: rgba(0, 230, 230, 0.1);
-            color: rgba(255, 255, 255, 0.3);
-            cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
-        }
-
-        .key-hints {
-            font-family: var(--font-roboto-mono);
-            font-size: 0.9em;
-            color: var(--text-color);
-            margin-top: 15px;
-            line-height: 1.5;
-            text-align: center;
-            opacity: 0.8;
-        }
-        .key-hints p { margin-bottom: 5px; }
-
-        /* Mobile Controls */
-        .mobile-controls {
-            display: none; /* Hidden by default, shown on smaller screens */
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: var(--secondary-bg);
-            padding: 10px 0;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid var(--glass-border);
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
-            z-index: 900;
-        }
-
-        .mobile-control-btn {
-            background-color: var(--accent-color);
-            color: var(--primary-bg);
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-family: var(--font-orbitron);
-            font-size: 1.2em;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            box-shadow: 0 2px 10px rgba(0, 230, 230, 0.4);
-            flex-shrink: 0;
-        }
-        .mobile-control-btn:hover {
-            background-color: var(--button-hover-bg);
-            color: var(--accent-color);
-            transform: scale(1.05);
-        }
-        .mobile-control-btn:active {
-            background-color: var(--button-active-bg);
-            transform: scale(0.95);
-        }
-        .mobile-control-btn.large {
-            width: 65px;
-            height: 65px;
-            font-size: 1.5em;
-        }
-        .mobile-control-btn.mobile-up {
-            transform: rotate(-90deg); /* For up arrow */
-        }
-        .mobile-control-btn.mobile-down {
-            transform: rotate(90deg); /* For down arrow */
-        }
-        .mobile-control-btn.mobile-left {
-            transform: rotate(180deg); /* For left arrow */
-        }
-        .mobile-control-btn.mobile-rotate {
-            font-size: 1em;
-        }
-
-
-        /* Modals (Game Over, Pause) */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity var(--transition-speed) ease, visibility var(--transition-speed) ease;
-        }
-
-        .modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .modal-content {
-            padding: 40px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            max-width: 400px;
-            width: 90%;
-            animation: modalPopIn 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
-        }
-
-        @keyframes modalPopIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .modal-content h2 {
-            font-family: var(--font-orbitron);
-            font-size: 2.2em;
-            color: var(--accent-color);
-            text-shadow: 0 0 10px rgba(0, 230, 230, 0.7);
-        }
-
-        .modal-content p {
-            font-size: 1.4em;
-            margin-bottom: 15px;
-        }
-
-        .modal-content p span {
-            color: var(--score-color);
-            font-weight: bold;
-            text-shadow: 0 0 8px var(--score-color);
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 800px) {
-            .game-area {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .header h1 {
-                font-size: 1.8em;
-            }
-
-            .game-board-container {
-                width: 250px; /* Smaller board for mobile */
-                height: 500px;
-            }
-
-            .sidebar {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
-                width: 100%;
-                gap: 15px;
-            }
-
-            .info-panel, .controls {
-                flex: 1 1 calc(50% - 15px); /* Two columns on mobile */
-                min-width: 150px;
-                max-width: 250px;
-            }
-
-            .controls {
-                flex-direction: column; /* Buttons stack vertically */
-                max-width: 200px; /* Constrain width of controls */
-            }
-            .key-hints {
-                display: none; /* Hide key hints on small screens */
-            }
-            .mobile-controls {
-                display: flex; /* Show mobile controls */
-            }
-            .container {
-                padding-bottom: 80px; /* Make space for mobile controls */
-            }
-        }
-
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 1.5em;
-            }
-
-            .game-board-container {
-                width: 200px; /* Even smaller board */
-                height: 400px;
-            }
-
-            .info-panel h2 {
-                font-size: 1em;
-            }
-
-            .info-panel p {
-                font-size: 1.4em;
-            }
-
-            .sidebar {
-                gap: 10px;
-            }
-
-            .info-panel, .controls {
-                flex: 1 1 100%; /* Single column layout for very small screens */
-                max-width: 300px;
-            }
-
-            .modal-content h2 {
-                font-size: 1.8em;
-            }
-            .modal-content p {
-                font-size: 1.2em;
-            }
-            .control-button {
-                font-size: 1em;
-                padding: 10px 15px;
-            }
-            .mobile-control-btn {
-                width: 45px;
-                height: 45px;
-                font-size: 1em;
-            }
-            .mobile-control-btn.large {
-                width: 55px;
-                height: 55px;
-                font-size: 1.2em;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TETRIS — JARVIS Edition</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--cyan:#00d4ff;--purple:#bf00ff;--pink:#ff006e;--green:#00ff64;--yellow:#ffc800;--red:#ff3232;--gb:rgba(255,255,255,0.05);--gbd:rgba(255,255,255,0.1)}
+html{height:100%}
+body{background:#0a0a1a;background-image:radial-gradient(ellipse at 20% 50%,rgba(120,40,200,.18) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(0,200,255,.12) 0%,transparent 55%),radial-gradient(ellipse at 50% 90%,rgba(255,50,100,.1) 0%,transparent 50%);min-height:100vh;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#fff;display:flex;flex-direction:column;align-items:center;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom,20px)}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.header{position:relative;z-index:1;text-align:center;padding:18px 16px 0;width:100%}
+h1{font-size:clamp(1.6rem,5vw,2.8rem);font-weight:900;letter-spacing:.35em;text-transform:uppercase;background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 24px rgba(0,212,255,.35));animation:titlePulse 3s ease-in-out infinite;line-height:1.1}
+@keyframes titlePulse{0%,100%{filter:drop-shadow(0 0 20px rgba(0,212,255,.4))}50%{filter:drop-shadow(0 0 42px rgba(191,0,255,.65))}}
+.subtitle{font-size:clamp(.55rem,1.5vw,.72rem);letter-spacing:.38em;color:rgba(255,255,255,.35);margin-top:5px}
+.game-wrapper{display:grid;grid-template-columns:160px auto 160px;gap:14px;align-items:start;justify-content:center;padding:14px 12px 24px;position:relative;z-index:1;width:100%;max-width:940px}
+.glass{background:var(--gb);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--gbd);border-radius:18px;box-shadow:0 8px 32px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
+.left-panel,.right-panel{display:flex;flex-direction:column;gap:12px}
+.panel-card{padding:14px 16px}
+.panel-card h3{font-size:.58rem;letter-spacing:.28em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px}
+.score-value{font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;transition:transform .12s cubic-bezier(.34,1.56,.64,1);display:block}
+.score-value.bump{transform:scale(1.22)}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.stat-row:last-child{margin-bottom:0}
+.stat-label{font-size:.65rem;color:rgba(255,255,255,.38);letter-spacing:.12em}
+.stat-val{font-size:.88rem;font-weight:700;color:var(--cyan)}
+.speed-bar-wrap{margin-top:2px;height:6px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden}
+.speed-bar-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--purple),var(--pink));transition:width .5s ease;box-shadow:0 0 8px rgba(0,212,255,.6);min-width:4px}
+.speed-hint{margin-top:6px;font-size:.6rem;color:rgba(255,255,255,.28);letter-spacing:.1em}
+.diff-btns{display:flex;flex-direction:column;gap:7px}
+.diff-btn{padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.45);font-size:.7rem;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:all .2s;text-align:center;width:100%}
+.diff-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+.diff-btn.active-easy{background:rgba(0,255,100,.14);border-color:var(--green);color:var(--green);box-shadow:0 0 14px rgba(0,255,100,.28)}
+.diff-btn.active-medium{background:rgba(255,200,0,.14);border-color:var(--yellow);color:var(--yellow);box-shadow:0 0 14px rgba(255,200,0,.28)}
+.diff-btn.active-hard{background:rgba(255,50,50,.14);border-color:var(--red);color:var(--red);box-shadow:0 0 14px rgba(255,50,50,.28)}
+.ai-toggle-row{display:flex;align-items:center;justify-content:space-between}
+.toggle-label{font-size:.72rem;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.7)}
+.toggle-switch{position:relative;width:42px;height:23px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:99px;cursor:pointer;transition:.3s;border:1px solid rgba(255,255,255,.15)}
+.toggle-slider::before{content:'';position:absolute;width:17px;height:17px;left:2px;top:2px;background:rgba(255,255,255,.55);border-radius:50%;transition:.3s}
+input:checked+.toggle-slider{background:rgba(0,212,255,.22);border-color:var(--cyan);box-shadow:0 0 12px rgba(0,212,255,.4)}
+input:checked+.toggle-slider::before{transform:translateX(19px);background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.ai-status{font-size:.62rem;margin-top:6px;color:rgba(255,255,255,.32);text-align:center;letter-spacing:.12em;min-height:15px;transition:color .3s}
+.ai-status.on{color:var(--cyan)}
+.level-badge{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.62rem;font-weight:800;letter-spacing:.1em;background:linear-gradient(135deg,rgba(0,212,255,.12),rgba(191,0,255,.12));border:1px solid rgba(0,212,255,.3);color:var(--cyan);margin-top:5px}
+.ai-desc{margin-top:8px;font-size:.6rem;color:rgba(255,255,255,.22);line-height:1.55}
+#nextCanvas,#holdCanvas{display:block;margin:0 auto;border-radius:8px}
+.best-score{font-size:1.5rem;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.canvas-wrap{position:relative;border-radius:18px;overflow:hidden;flex-shrink:0;align-self:start}
+#gameCanvas{display:block;image-rendering:pixelated}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(8,8,22,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:18px;transition:opacity .35s ease;z-index:10;padding:20px;gap:0}
+.overlay.hidden{opacity:0;pointer-events:none}
+.overlay-title{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;letter-spacing:.22em;background:linear-gradient(135deg,var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+.overlay-sub{font-size:.7rem;color:rgba(255,255,255,.38);letter-spacing:.2em;margin-bottom:28px;text-align:center}
+.btn-start{padding:13px 34px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;font-size:.88rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;transition:all .2s;box-shadow:0 4px 24px rgba(0,212,255,.38);position:relative;overflow:hidden;white-space:nowrap}
+.btn-start::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.14);opacity:0;transition:opacity .2s}
+.btn-start:hover::before{opacity:1}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,212,255,.5)}
+.btn-start:active{transform:translateY(0)}
+.gameover-score{font-size:.95rem;color:rgba(255,255,255,.55);margin-bottom:20px;letter-spacing:.12em;text-align:center}
+.gameover-score span{color:var(--cyan);font-weight:900;font-size:1.4rem}
+.controls-hint{margin-top:18px;font-size:.6rem;color:rgba(255,255,255,.22);letter-spacing:.08em;text-align:center;line-height:1.7}
+.mobile-controls{display:none;position:relative;z-index:1;width:100%;max-width:360px;padding:4px 16px 8px}
+.mobile-row{display:flex;justify-content:center;gap:10px;margin-bottom:8px}
+.m-btn{flex:1;max-width:72px;height:52px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.7);font-size:1.15rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;-webkit-tap-highlight-color:transparent;user-select:none;touch-action:manipulation}
+.m-btn:active{background:rgba(0,212,255,.2);border-color:var(--cyan);color:var(--cyan);transform:scale(.94)}
+.m-btn.wide{max-width:160px;font-size:.68rem;font-weight:700;letter-spacing:.1em}
+.m-btn.hold-btn{font-size:.65rem;font-weight:700;letter-spacing:.08em;max-width:72px}
+.particle{position:fixed;width:3px;height:3px;border-radius:50%;pointer-events:none;z-index:0;animation:floatUp linear infinite;opacity:0}
+@keyframes floatUp{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:.55}90%{opacity:.28}100%{transform:translateY(-8vh) scale(1);opacity:0}}
+@media(max-width:740px){
+  .game-wrapper{grid-template-columns:1fr;grid-template-rows:auto auto auto;gap:10px;padding:10px 12px 8px}
+  .left-panel{grid-row:2;grid-column:1;flex-direction:row;flex-wrap:wrap;gap:8px;justify-content:center}
+  .canvas-wrap-col{grid-row:1;grid-column:1;display:flex;justify-content:center}
+  .right-panel{grid-row:3;grid-column:1;flex-direction:row;flex-wrap:wrap;gap:8px;justify-content:center}
+  .left-panel .panel-card,.right-panel .panel-card{flex:1 1 120px;min-width:120px;max-width:160px}
+  .mobile-controls{display:block}
+}
+@media(max-width:420px){
+  .left-panel .panel-card,.right-panel .panel-card{flex:1 1 100px;min-width:100px}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header class="glass-card header">
-            <h1>J.A.R.V.I.S. Tetris</h1>
-        </header>
+<div class="bg-grid"></div>
+<header class="header">
+  <h1>TETRIS</h1>
+  <p class="subtitle">J.A.R.V.I.S. EDITION — ADAPTIVE INTELLIGENCE</p>
+</header>
 
-        <main class="game-area">
-            <div class="game-board-container glass-card" id="game-board-container">
-                <div id="game-board">
-                    <!-- Game cells will be generated by JavaScript -->
-                </div>
-            </div>
-
-            <aside class="sidebar">
-                <div class="info-panel glass-card">
-                    <h2>Next Piece</h2>
-                    <div id="next-piece-display" class="next-piece-grid"></div>
-                </div>
-
-                <div class="info-panel glass-card">
-                    <h2>Score</h2>
-                    <p id="score-display">0</p>
-                </div>
-
-                <div class="info-panel glass-card">
-                    <h2>Level</h2>
-                    <p id="level-display">1</p>
-                </div>
-
-                <div class="info-panel glass-card">
-                    <h2>Lines</h2>
-                    <p id="lines-display">0</p>
-                </div>
-
-                <div class="controls glass-card">
-                    <button id="start-pause-btn" class="control-button">Start Game</button>
-                    <button id="restart-btn" class="control-button" disabled>Restart</button>
-                    <div class="key-hints">
-                        <p>← → ↓ : Move</p>
-                        <p>↑ : Rotate</p>
-                        <p>Space : Hard Drop</p>
-                        <p>P : Pause</p>
-                    </div>
-                </div>
-            </aside>
-        </main>
+<div class="game-wrapper">
+  <div class="left-panel">
+    <div class="glass panel-card">
+      <h3>Score</h3>
+      <span class="score-value" id="scoreDisplay">0</span>
+      <div style="margin-top:10px">
+        <div class="stat-row"><span class="stat-label">LINES</span><span class="stat-val" id="linesDisplay">0</span></div>
+        <div class="stat-row"><span class="stat-label">LEVEL</span><span class="stat-val" id="levelDisplay">1</span></div>
+      </div>
     </div>
-
-    <!-- Mobile Controls -->
-    <div class="mobile-controls">
-        <button class="mobile-control-btn mobile-left" id="mobile-left-btn">◀</button>
-        <button class="mobile-control-btn mobile-down" id="mobile-down-btn">◀</button>
-        <button class="mobile-control-btn large" id="mobile-hard-drop-btn">⇩</button>
-        <button class="mobile-control-btn mobile-rotate" id="mobile-rotate-btn">↻</button>
-        <button class="mobile-control-btn mobile-right" id="mobile-right-btn">▶</button>
+    <div class="glass panel-card">
+      <h3>Speed</h3>
+      <div class="speed-bar-wrap"><div class="speed-bar-fill" id="speedBar" style="width:5%"></div></div>
+      <p class="speed-hint">INCREASES WITH LEVEL</p>
     </div>
-
-    <!-- Game Over Modal -->
-    <div id="gameOverModal" class="modal">
-        <div class="modal-content glass-card">
-            <h2>GAME OVER</h2>
-            <p>Final Score: <span id="final-score">0</span></p>
-            <button id="playAgainBtn" class="control-button">Play Again</button>
-        </div>
+    <div class="glass panel-card">
+      <h3>Difficulty</h3>
+      <div class="diff-btns">
+        <button class="diff-btn active-easy" id="btnEasy" onclick="setDifficulty('easy')">EASY</button>
+        <button class="diff-btn" id="btnMedium" onclick="setDifficulty('medium')">MEDIUM</button>
+        <button class="diff-btn" id="btnHard" onclick="setDifficulty('hard')">HARD</button>
+      </div>
     </div>
+  </div>
 
-    <!-- Pause Modal -->
-    <div id="pauseModal" class="modal">
-        <div class="modal-content glass-card">
-            <h2>PAUSED</h2>
-            <p>Press 'P' or click 'Resume' to continue.</p>
-            <button id="resumeGameBtn" class="control-button">Resume Game</button>
-        </div>
+  <div class="canvas-wrap-col">
+    <div class="canvas-wrap glass" id="canvasWrap">
+      <canvas id="gameCanvas"></canvas>
+      <div class="overlay" id="startOverlay">
+        <div class="overlay-title">TETRIS</div>
+        <div class="overlay-sub">J.A.R.V.I.S. ADAPTIVE ENGINE</div>
+        <button class="btn-start" onclick="startGame()">START GAME</button>
+        <div class="controls-hint">← → MOVE &nbsp;|&nbsp; ↑ ROTATE &nbsp;|&nbsp; ↓ SOFT DROP<br>SPACE HARD DROP &nbsp;|&nbsp; C HOLD &nbsp;|&nbsp; P PAUSE</div>
+      </div>
+      <div class="overlay hidden" id="gameOverOverlay">
+        <div class="overlay-title">GAME OVER</div>
+        <div class="gameover-score">SCORE: <span id="finalScore">0</span></div>
+        <button class="btn-start" onclick="startGame()">PLAY AGAIN</button>
+      </div>
+      <div class="overlay hidden" id="pauseOverlay">
+        <div class="overlay-title">PAUSED</div>
+        <div class="overlay-sub">PRESS P TO RESUME</div>
+        <button class="btn-start" onclick="togglePause()">RESUME</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        // J.A.R.V.I.S. Tetris Game Logic
-        const BOARD_WIDTH = 10;
-        const BOARD_HEIGHT = 20;
-        const CELL_SIZE_PX = 30; // Base cell size for calculations, actual size determined by CSS Grid
-        const INITIAL_DROP_SPEED = 800; // milliseconds
+  <div class="right-panel">
+    <div class="glass panel-card">
+      <h3>Next</h3>
+      <canvas id="nextCanvas" width="100" height="100"></canvas>
+    </div>
+    <div class="glass panel-card">
+      <h3>Hold</h3>
+      <canvas id="holdCanvas" width="100" height="70"></canvas>
+    </div>
+    <div class="glass panel-card">
+      <h3>AI Mode</h3>
+      <div class="ai-toggle-row">
+        <span class="toggle-label">BOT</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="aiToggle" onchange="toggleAI()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="ai-status" id="aiStatus">PLAYER MODE</div>
+      <div class="level-badge" id="aiBadge" style="display:none">AI LVL <span id="aiLevel">1</span></div>
+      <p class="ai-desc">Bot improves as your score increases</p>
+    </div>
+    <div class="glass panel-card">
+      <h3>Best</h3>
+      <span class="best-score" id="bestDisplay">0</span>
+    </div>
+  </div>
+</div>
 
-        const gameBoard = document.getElementById('game-board');
-        const nextPieceDisplay = document.getElementById('next-piece-
+<div class="mobile-controls">
+  <div class="mobile-row">
+    <button class="m-btn hold-btn" ontouchstart="preventDefault(event);mobileHold()" onclick="mobileHold()">HOLD</button>
+    <button class="m-btn" ontouchstart="preventDefault(event);mobileRotate()" onclick="mobileRotate()">↻</button>
+    <button class="m-btn wide" ontouchstart="preventDefault(event);mobileHard()" onclick="mobileHard()">HARD DROP</button>
+  </div>
+  <div class="mobile-row">
+    <button class="m-btn" ontouchstart="preventDefault(event);startRepeat('left')" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()">◀</button>
+    <button class="m-btn" ontouchstart="preventDefault(event);startRepeat('down')" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()">▼</button>
+    <button class="m-btn" ontouchstart="preventDefault(event);startRepeat('right')" ontouchend="stopRepeat()" ontouchcancel="stopRepeat()">▶</button>
+  </div>
+</div>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────
+const COLS=10,ROWS=20;
+let CELL=30;
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const nextCanvas=document.getElementById('nextCanvas');
+const nextCtx=nextCanvas.getContext('2d');
+const holdCanvas=document.getElementById('holdCanvas');
+const holdCtx=holdCanvas.getContext('2d');
+
+const COLORS={
+  I:{fill:'#00d4ff',glow:'rgba(0,212,255,.7)'},
+  O:{fill:'#ffc800',glow:'rgba(255,200,0,.7)'},
+  T:{fill:'#bf00ff',glow:'rgba(191,0,255,.7)'},
+  S:{fill:'#00ff64',glow:'rgba(0,255,100,.7)'},
+  Z:{fill:'#ff3232',glow:'rgba(255,50,50,.7)'},
+  J:{fill:'#0064ff',glow:'rgba(0,100,255,.7)'},
+  L:{fill:'#ff8c00',glow:'rgba(255,140,0,.7)'},
+};
+const SHAPES={
+  I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+  O:[[1,1],[1,1]],
+  T:[[0,1,0],[1,1,1],[0,0,0]],
+  S:[[0,1,1],[1,1,0],[0,0,0]],
+  Z:[[1,1,0],[0,1,1],[0,0,0]],
+  J:[[1,0,0],[1,1,1],[0,0,0]],
+  L:[[0,0,1],[1,1,1],[0,0,0]],
+};
+const PTYPES=['I','O','T','S','Z','J','L'];
+const LINE_SCORES=[0,100,300,500,800];
+const DIFF_CONFIG={
+  easy:{baseSpeed:900,scoreMulti:1.0,aiDelay:380},
+  medium:{baseSpeed:600,scoreMulti:1.5,aiDelay:220},
+  hard:{baseSpeed:280,scoreMulti:2.5,aiDelay:90},
+};
+
+// ── State ──────────────────────────────────────────────────────────
+let board=[],currentPiece=null,nextPiece=null,heldPiece=null;
+let canHold=true,score=0,lines=0,level=1;
+let bestScore=parseInt(localStorage.getItem('tetris_best')||'0');
+let gameState='idle',difficulty='easy';
+let aiEnabled=false,aiMoveTimer=0,aiTarget=null;
+let dropTimer=0,lastTime=0,animFrameId=null;
+let flashRows=[],flashTimer=0;
+let bag=[];
+let repeatTimer=null,repeatDir=null;
+
+// ── Responsive ─────────────────────────────────────────────────────
+function resizeCanvas(){
+  const vw=window.innerWidth,vh=window.innerHeight;
+  let maxW,maxH;
+  if(vw<=740){maxW=Math.min(vw-28,320);maxH=vh*.52;}
+  else{maxW=Math.min(vw-380,340);maxH=vh-160;}
+  CELL=Math.max(18,Math.floor(Math.min(maxH/ROWS,maxW/COLS)));
+  canvas.width=COLS*CELL;
+  canvas.height=ROWS*CELL;
+  if(gameState==='playing'||gameState==='paused')render();
+}
+
+// ── Bag randomizer ─────────────────────────────────────────────────
+function nextBag(){
+  if(!bag.length)bag=[...PTYPES].sort(()=>Math.random()-.5);
+  return bag.pop();
+}
+
+function createPiece(type){
+  return{type,shape:SHAPES[type].map(r=>[...r]),x:type==='O'?4:3,y:0,color:COLORS[type]};
+}
+
+function initBoard(){
+  board=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+}
+
+// ── Matrix helpers ─────────────────────────────────────────────────
+function rotateCW(m){
+  const R=m.length,C=m[0].length;
+  const out=Array.from({length:C},()=>Array(R).fill(0));
+  for(let r=0;r<R;r++)for(let c=0;c<C;c++)out[c][R-1-r]=m[r][c];
+  return out;
+}
+
+function isValid(shape,x,y,b){
+  const brd=b||board;
+  for(let r=0;r<shape.length;r++){
+    for(let c=0;c<shape[r].length;c++){
+      if(!shape[r][c])continue;
+      const nx=x+c,ny=y+r;
+      if(nx<0||nx>=COLS||ny>=ROWS)return false;
+      if(ny>=0&&brd[ny][nx])return false;
+    }
+  }
+  return true;
+}
+
+// ── SRS wall kicks ─────────────────────────────────────────────────
+const KICKS_JLSTZ=[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]];
+const KICKS_I=[[0,0],[-2,0],[1,0],[-2,-1],[1,2]];
+
+function tryRotate(piece){
+  const ns=rotateCW(piece.shape);
+  const kicks=piece.type==='I'?KICKS_I:KICKS_JLSTZ;
+  for(const[dx,dy]of kicks){
+    if(isValid(ns,piece.x+dx,piece.y+dy)){
+      return{...piece,shape:ns,x:piece.x+dx,y:piece.y+dy};
+    }
+  }
+  return piece;
+}
+
+// ── Ghost piece ────────────────────────────────────────────────────
+function getGhostY(piece){
+  let gy=piece.y;
+  while(isValid(piece.shape,piece.x,gy+1))gy++;
+  return gy;
+}
+
+// ── Lock & clear ───────────────────────────────────────────────────
+function lockPiece(){
+  for(let r=0;r<currentPiece.shape.length;r++){
+    for(let c=0;c<currentPiece.shape[r].length;c++){
+      if(!currentPiece.shape[r][c])continue;
+      const ny=currentPiece.y+r;
+      if(ny<0){endGame();return;}
+      board[ny][currentPiece.x+c]=currentPiece.color;
+    }
+  }
+  const full=[];
+  for(let r=0;r<ROWS;r++){
+    if(board[r].every(c=>c!==null))full.push(r);
+  }
+  if(full.length){
+    flashRows=full;
+    flashTimer=220;
+    setTimeout(()=>{clearLines(full);flashRows=[];},220);
+  }
+  spawnNext();
+}
+
+function clearLines(rows){
+  const cleared=rows.length;
+  rows.sort((a,b)=>b-a).forEach(r=>board.splice(r,1));
+  while(board.length<ROWS)board.unshift(Array(COLS).fill(null));
+  const multi=DIFF_CONFIG[difficulty].scoreMulti;
+  const gained=Math.round(LINE_SCORES[cleared]*level*multi);
+  score+=gained;
+  lines+=cleared;
+  const newLevel=Math.floor(lines/10)+1;
+  if(newLevel>level){level=newLevel;}
+  updateUI();
+  bumpScore();
+}
+
+function spawnNext(){
+  currentPiece=nextPiece||createPiece(nextBag());
+  nextPiece=createPiece(nextBag());
+  canHold=true;
+  aiTarget=null;
+  if(!isValid(currentPiece.shape,currentPiece.x,currentPiece.y)){
+    endGame();return;
+  }
+  drawNext();
+}
+
+// ── Hold ───────────────────────────────────────────────────────────
+function holdPiece(){
+  if(!canHold||gameState!=='playing')return;
+  canHold=false;
+  if(heldPiece){
+    const tmp=heldPiece;
+    heldPiece=createPiece(currentPiece.type);
+    currentPiece={...createPiece(tmp.type)};
+  } else {
+    heldPiece=createPiece(currentPiece.type);
+    currentPiece=nextPiece;
+    nextPiece=createPiece(nextBag());
+    drawNext();
+  }
+  aiTarget=null;
+  drawHold();
+}
+
+// ── Movement ───────────────────────────────────────────────────────
+function moveLeft(){if(gameState!=='playing')return;if(isValid(currentPiece.shape,currentPiece.x-1,currentPiece.y))currentPiece.x--;}
+function moveRight(){if(gameState!=='playing')return;if(isValid(currentPiece.shape,currentPiece.x+1,currentPiece.y))currentPiece.x++;}
+function moveDown(){
+  if(gameState!=='playing')return false;
+  if(isValid(currentPiece.shape,currentPiece.x,currentPiece.y+1)){currentPiece.y++;return true;}
+  lockPiece();return false;
+}
+function rotate(){if(gameState!=='playing')return;currentPiece=tryRotate(currentPiece);}
+function hardDrop(){
+  if(gameState!=='playing')return;
+  const gy=getGhostY(currentPiece);
+  score+=Math.max(0,(gy-currentPiece.y)*2);
+  currentPiece.y=gy;
+  lockPiece();
+  updateUI();
+}
+
+// ── AI ─────────────────────────────────────────────────────────────
+function evalBoard(b){
+  let holes=0,bumpiness=0,height=0,complete=0;
+  const colH=Array(COLS).fill(0);
+  for(let c=0;c<COLS;c++){
+    let found=false;
+    for(let r=0;r<ROWS;r++){
+      if(b[r][c]){if(!found){colH[c]=ROWS-r;found=true;}}
+      else if(found)holes++;
+    }
+  }
+  for(let c=0;c<COLS-1;c++)bumpiness+=Math.abs(colH[c]-colH[c+1]);
+  height=Math.max(...colH);
+  for(let r=0;r<ROWS;r++)if(b[r].every(c=>c!==null))complete++;
+  return -0.51*height - 0.36*holes - 0.18*bumpiness + 0.76*complete;
+}
+
+function simulateBoard(piece,rot,tx){
+  // Build rotated shape
+  let shape=piece.shape.map(r=>[...r]);
+  for(let i=0;i<rot;i++)shape=rotateCW(shape);
+  // Find drop Y
+  let y=0;
+  while(isValid(shape,tx,y+1,board))y++;
+  if(!isValid(
