@@ -3,16 +3,636 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exceptional Digital Systems</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <title>J.A.R.V.I.S. Tetris</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght[400,700]&display=swap" rel="stylesheet">
     <style>
-        /* J.A.R.V.I.S. Protocol: Initiating Style Sequence 001-A */
-
-        /* CSS Variables */
         :root {
-            --primary-bg: #0d0617; /* Deep violet-black */
-            --secondary-bg: #1a0f2b; /* Slightly lighter dark */
-            --accent-color: #8a2be2; /* Blue-violet for primary actions */
-            --accent-light: #9b59b6; /* Lighter accent for subtle variations */
-            --text-color: #e0e0e0; /* Light grey for body
+            /* J.A.R.V.I.S. Color Palette & Glassmorphism */
+            --primary-bg: #0d1226; /* Darker Space Blue */
+            --secondary-bg: #1a1f33; /* Slightly lighter */
+            --accent-color: #00e6e6; /* Aqua Glow */
+            --text-color: #e0e0e0; /* Light Gray */
+            --glass-bg: rgba(255, 255, 255, 0.08); /* White with low opacity */
+            --glass-border: rgba(0, 255, 255, 0.2); /* Aqua border */
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); /* Stronger shadow */
+            --blur-effect: blur(10px);
+            --transition-speed: 0.3s ease;
+            --button-hover-bg: rgba(0, 230, 230, 0.2); /* Accent with transparency */
+            --button-active-bg: rgba(0, 230, 230, 0.4);
+            --border-radius-sm: 8px;
+            --border-radius-md: 12px;
+            --border-radius-lg: 16px;
+            --font-orbitron: 'Orbitron', sans-serif;
+            --font-roboto-mono: 'Roboto Mono', monospace;
+
+            /* Game Specific Colors */
+            --game-board-bg: rgba(0, 0, 0, 0.5); /* Darker, more transparent */
+            --game-cell-border: rgba(255, 255, 255, 0.07); /* Subtle cell borders */
+
+            /* Tetromino Colors - Vibrant and distinct */
+            --piece-color-I: #00FFFF; /* Cyan */
+            --piece-color-J: #0000FF; /* Blue */
+            --piece-color-L: #FFA500; /* Orange */
+            --piece-color-O: #FFFF00; /* Yellow */
+            --piece-color-S: #00FF00; /* Green */
+            --piece-color-T: #800080; /* Purple */
+            --piece-color-Z: #FF0000; /* Red */
+            --piece-color-ghost: rgba(255, 255, 255, 0.15); /* Lighter ghost */
+
+            /* Score/Info Colors */
+            --score-color: #00e6e6; /* Accent color */
+            --level-color: #ff69b4; /* Hot Pink */
+            --lines-color: #39ff14; /* Neon Green */
+        }
+
+        /* Base Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden; /* Prevent scrolling */
+        }
+
+        body {
+            font-family: var(--font-roboto-mono);
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            touch-action: manipulation; /* Optimize touch responsiveness */
+        }
+
+        /* Animated Background Gradient - High Aura */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #1a2a6c, #b21f1f, #fdbb2d);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: var(--glass-bg);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            backdrop-filter: var(--blur-effect);
+            -webkit-backdrop-filter: var(--blur-effect);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px 0 rgba(0, 255, 255, 0.2); /* Accent glow on hover */
+        }
+
+        /* Main Container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            align-items: center;
+            max-width: 1200px;
+            width: 95%;
+            padding: 20px 0;
+            margin: auto; /* Center content vertically if screen is taller */
+            max-height: 100vh; /* Ensure it doesn't overflow viewport */
+            overflow-y: auto; /* Allow scrolling if content is too tall */
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+        }
+        .container::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome, Safari, Opera */
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px 30px;
+            width: 100%;
+            max-width: 600px;
+            border-bottom: 2px solid var(--accent-color);
+            box-shadow: 0 0 20px rgba(0, 230, 230, 0.5); /* Header glow */
+        }
+
+        .header h1 {
+            font-family: var(--font-orbitron);
+            font-size: 2.5em;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(0, 230, 230, 0.7);
+            letter-spacing: 2px;
+        }
+
+        /* Game Area Layout */
+        .game-area {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap; /* Allows wrapping on smaller screens */
+        }
+
+        /* Game Board */
+        .game-board-container {
+            flex-shrink: 0;
+            width: 300px; /* Base width for 10 cells * 30px */
+            height: 600px; /* Base height for 20 cells * 30px */
+            padding: 10px;
+            background: var(--game-board-bg);
+            border: 2px solid var(--accent-color);
+            box-shadow: inset 0 0 15px rgba(0, 230, 230, 0.5);
+            overflow: hidden; /* Important for piece rendering */
+            position: relative;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(20, 1fr);
+            width: 100%;
+            height: 100%;
+            background-color: transparent; /* Actual board background */
+            border-collapse: collapse;
+        }
+
+        .cell {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            border: 1px solid var(--game-cell-border);
+            border-left: none;
+            border-top: none;
+            position: relative;
+            z-index: 1;
+            transition: background-color 0.1s ease;
+        }
+
+        .cell.clearing {
+            animation: lineClear 0.5s ease-out forwards;
+        }
+
+        @keyframes lineClear {
+            0% { background-color: rgba(0, 255, 255, 0.8); transform: scale(1); opacity: 1; }
+            50% { background-color: rgba(0, 255, 255, 0.4); transform: scale(1.1); opacity: 0.7; }
+            100% { background-color: transparent; transform: scale(0); opacity: 0; }
+        }
+
+        /* Piece Styling */
+        .piece {
+            background-color: gray; /* Default, should be overridden */
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.5), 0 0 5px rgba(0, 0, 0, 0.3);
+            border-radius: 2px;
+            z-index: 2;
+            animation: pieceAppear 0.2s ease-out;
+        }
+
+        @keyframes pieceAppear {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .piece-I { background-color: var(--piece-color-I); box-shadow: inset 0 0 8px rgba(0,255,255,0.7), 0 0 5px rgba(0,0,0,0.3); }
+        .piece-J { background-color: var(--piece-color-J); box-shadow: inset 0 0 8px rgba(0,0,255,0.7), 0 0 5px rgba(0,0,0,0.3); }
+        .piece-L { background-color: var(--piece-color-L); box-shadow: inset 0 0 8px rgba(255,165,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
+        .piece-O { background-color: var(--piece-color-O); box-shadow: inset 0 0 8px rgba(255,255,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
+        .piece-S { background-color: var(--piece-color-S); box-shadow: inset 0 0 8px rgba(0,255,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
+        .piece-T { background-color: var(--piece-color-T); box-shadow: inset 0 0 8px rgba(128,0,128,0.7), 0 0 5px rgba(0,0,0,0.3); }
+        .piece-Z { background-color: var(--piece-color-Z); box-shadow: inset 0 0 8px rgba(255,0,0,0.7), 0 0 5px rgba(0,0,0,0.3); }
+
+        .ghost-piece {
+            background-color: var(--piece-color-ghost);
+            border: 1px dashed var(--accent-color);
+            opacity: 0.7;
+            z-index: 0; /* Below actual pieces */
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 200px; /* Fixed width for sidebar */
+            flex-shrink: 0;
+        }
+
+        .info-panel {
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100px;
+        }
+
+        .info-panel h2 {
+            font-family: var(--font-orbitron);
+            font-size: 1.2em;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px rgba(0, 230, 230, 0.5);
+        }
+
+        .info-panel p {
+            font-family: var(--font-roboto-mono);
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        #score-display { color: var(--score-color); text-shadow: 0 0 8px var(--score-color); }
+        #level-display { color: var(--level-color); text-shadow: 0 0 8px var(--level-color); }
+        #lines-display { color: var(--lines-color); text-shadow: 0 0 8px var(--lines-color); }
+
+        /* Next Piece Display */
+        #next-piece-display {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            width: 100px; /* Fixed size for next piece grid */
+            height: 100px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--glass-border);
+            margin-top: 10px;
+        }
+        #next-piece-display .cell {
+            border: none; /* No borders in next piece display */
+            background-color: transparent !important; /* Ensure no background for empty cells */
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .control-button {
+            background-color: var(--accent-color);
+            color: var(--primary-bg); /* Dark text on bright button */
+            border: none;
+            border-radius: var(--border-radius-sm);
+            padding: 12px 20px;
+            font-family: var(--font-orbitron);
+            font-size: 1.1em;
+            cursor: pointer;
+            outline: none;
+            transition: background-color var(--transition-speed), transform 0.1s ease, box-shadow var(--transition-speed);
+            box-shadow: 0 4px 15px rgba(0, 230, 230, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-button:hover:not(:disabled) {
+            background-color: var(--button-hover-bg);
+            color: var(--accent-color); /* Bright text on darker hover */
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(0, 230, 230, 0.6);
+        }
+
+        .control-button:active:not(:disabled) {
+            background-color: var(--button-active-bg);
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 2px 10px rgba(0, 230, 230, 0.3);
+        }
+
+        .control-button:disabled {
+            background-color: rgba(0, 230, 230, 0.1);
+            color: rgba(255, 255, 255, 0.3);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .key-hints {
+            font-family: var(--font-roboto-mono);
+            font-size: 0.9em;
+            color: var(--text-color);
+            margin-top: 15px;
+            line-height: 1.5;
+            text-align: center;
+            opacity: 0.8;
+        }
+        .key-hints p { margin-bottom: 5px; }
+
+        /* Mobile Controls */
+        .mobile-controls {
+            display: none; /* Hidden by default, shown on smaller screens */
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--secondary-bg);
+            padding: 10px 0;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid var(--glass-border);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.3);
+            z-index: 900;
+        }
+
+        .mobile-control-btn {
+            background-color: var(--accent-color);
+            color: var(--primary-bg);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-family: var(--font-orbitron);
+            font-size: 1.2em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 10px rgba(0, 230, 230, 0.4);
+            flex-shrink: 0;
+        }
+        .mobile-control-btn:hover {
+            background-color: var(--button-hover-bg);
+            color: var(--accent-color);
+            transform: scale(1.05);
+        }
+        .mobile-control-btn:active {
+            background-color: var(--button-active-bg);
+            transform: scale(0.95);
+        }
+        .mobile-control-btn.large {
+            width: 65px;
+            height: 65px;
+            font-size: 1.5em;
+        }
+        .mobile-control-btn.mobile-up {
+            transform: rotate(-90deg); /* For up arrow */
+        }
+        .mobile-control-btn.mobile-down {
+            transform: rotate(90deg); /* For down arrow */
+        }
+        .mobile-control-btn.mobile-left {
+            transform: rotate(180deg); /* For left arrow */
+        }
+        .mobile-control-btn.mobile-rotate {
+            font-size: 1em;
+        }
+
+
+        /* Modals (Game Over, Pause) */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-speed) ease, visibility var(--transition-speed) ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            padding: 40px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            max-width: 400px;
+            width: 90%;
+            animation: modalPopIn 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+
+        @keyframes modalPopIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            font-family: var(--font-orbitron);
+            font-size: 2.2em;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(0, 230, 230, 0.7);
+        }
+
+        .modal-content p {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+        }
+
+        .modal-content p span {
+            color: var(--score-color);
+            font-weight: bold;
+            text-shadow: 0 0 8px var(--score-color);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 800px) {
+            .game-area {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .game-board-container {
+                width: 250px; /* Smaller board for mobile */
+                height: 500px;
+            }
+
+            .sidebar {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                width: 100%;
+                gap: 15px;
+            }
+
+            .info-panel, .controls {
+                flex: 1 1 calc(50% - 15px); /* Two columns on mobile */
+                min-width: 150px;
+                max-width: 250px;
+            }
+
+            .controls {
+                flex-direction: column; /* Buttons stack vertically */
+                max-width: 200px; /* Constrain width of controls */
+            }
+            .key-hints {
+                display: none; /* Hide key hints on small screens */
+            }
+            .mobile-controls {
+                display: flex; /* Show mobile controls */
+            }
+            .container {
+                padding-bottom: 80px; /* Make space for mobile controls */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .game-board-container {
+                width: 200px; /* Even smaller board */
+                height: 400px;
+            }
+
+            .info-panel h2 {
+                font-size: 1em;
+            }
+
+            .info-panel p {
+                font-size: 1.4em;
+            }
+
+            .sidebar {
+                gap: 10px;
+            }
+
+            .info-panel, .controls {
+                flex: 1 1 100%; /* Single column layout for very small screens */
+                max-width: 300px;
+            }
+
+            .modal-content h2 {
+                font-size: 1.8em;
+            }
+            .modal-content p {
+                font-size: 1.2em;
+            }
+            .control-button {
+                font-size: 1em;
+                padding: 10px 15px;
+            }
+            .mobile-control-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1em;
+            }
+            .mobile-control-btn.large {
+                width: 55px;
+                height: 55px;
+                font-size: 1.2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="glass-card header">
+            <h1>J.A.R.V.I.S. Tetris</h1>
+        </header>
+
+        <main class="game-area">
+            <div class="game-board-container glass-card" id="game-board-container">
+                <div id="game-board">
+                    <!-- Game cells will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <aside class="sidebar">
+                <div class="info-panel glass-card">
+                    <h2>Next Piece</h2>
+                    <div id="next-piece-display" class="next-piece-grid"></div>
+                </div>
+
+                <div class="info-panel glass-card">
+                    <h2>Score</h2>
+                    <p id="score-display">0</p>
+                </div>
+
+                <div class="info-panel glass-card">
+                    <h2>Level</h2>
+                    <p id="level-display">1</p>
+                </div>
+
+                <div class="info-panel glass-card">
+                    <h2>Lines</h2>
+                    <p id="lines-display">0</p>
+                </div>
+
+                <div class="controls glass-card">
+                    <button id="start-pause-btn" class="control-button">Start Game</button>
+                    <button id="restart-btn" class="control-button" disabled>Restart</button>
+                    <div class="key-hints">
+                        <p>← → ↓ : Move</p>
+                        <p>↑ : Rotate</p>
+                        <p>Space : Hard Drop</p>
+                        <p>P : Pause</p>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile Controls -->
+    <div class="mobile-controls">
+        <button class="mobile-control-btn mobile-left" id="mobile-left-btn">◀</button>
+        <button class="mobile-control-btn mobile-down" id="mobile-down-btn">◀</button>
+        <button class="mobile-control-btn large" id="mobile-hard-drop-btn">⇩</button>
+        <button class="mobile-control-btn mobile-rotate" id="mobile-rotate-btn">↻</button>
+        <button class="mobile-control-btn mobile-right" id="mobile-right-btn">▶</button>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content glass-card">
+            <h2>GAME OVER</h2>
+            <p>Final Score: <span id="final-score">0</span></p>
+            <button id="playAgainBtn" class="control-button">Play Again</button>
+        </div>
+    </div>
+
+    <!-- Pause Modal -->
+    <div id="pauseModal" class="modal">
+        <div class="modal-content glass-card">
+            <h2>PAUSED</h2>
+            <p>Press 'P' or click 'Resume' to continue.</p>
+            <button id="resumeGameBtn" class="control-button">Resume Game</button>
+        </div>
+    </div>
+
+    <script>
+        // J.A.R.V.I.S. Tetris Game Logic
+        const BOARD_WIDTH = 10;
+        const BOARD_HEIGHT = 20;
+        const CELL_SIZE_PX = 30; // Base cell size for calculations, actual size determined by CSS Grid
+        const INITIAL_DROP_SPEED = 800; // milliseconds
+
+        const gameBoard = document.getElementById('game-board');
+        const nextPieceDisplay = document.getElementById('next-piece-
