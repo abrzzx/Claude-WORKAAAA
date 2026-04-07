@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. Interactive Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        /* J.A.R.V.I.S. Base Styles & Glassmorphism Theme */
+        :root {
+            --bg-gradient-start: #0f0c29; /* Dark deep blue/purple */
+            --bg-gradient-end: #24243e;   /* Darker purple */
+            --app-bg-color: rgba(255, 255, 255, 0.08); /* Translucent white for glass effect */
+            --app-border-color: rgba(255, 255, 255, 0.15);
+            --text-color: #e0e0e0; /* Light grey */
+            --primary-accent: #8e2de2; /* Vibrant purple */
+            --secondary-accent: #4a00e0; /* Darker vibrant purple */
+            --button-bg-normal: rgba(255, 255, 255, 0.05);
+            --button-bg-hover: rgba(255, 255, 255, 0.15); /* Completed this variable */
+            --button-text-color: var(--text-color);
+            --box-shadow-light: rgba(0, 0, 0, 0.2);
+            --box-shadow-strong: rgba(0, 0, 0, 0.4);
+            --blur-strength: 12px;
+            --border-radius-large: 16px;
+            --border-radius-small: 8px;
+            --font-family-header: 'Orbitron', sans-serif;
+            --font-family-body: 'Roboto', sans-serif;
+            --gradient-glow: radial-gradient(circle at center, rgba(142, 45, 226, 0.3) 0%, transparent 70%);
+        }
+
+        /* Global Resets and Base Styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: var(--font-family-body);
+            color: var(--text-color);
+            line-height: 1.6;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            overflow: hidden; /* Prevent scroll for animated background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            animation: fadeIn 1s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Background Animations */
+        .background-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .background-sphere {
+            position: absolute;
+            background: radial-gradient(circle, var(--primary-accent) 0%, transparent 70%);
+            opacity: 0.1;
+            border-radius: 50%;
+            animation: floatAndGlow 20s infinite alternate ease-in-out;
+        }
+        .background-sphere:nth-child(1) {
+            width: 300px; height: 300px;
+            top: 10%; left: 15%;
+            animation-delay: 0s;
+        }
+        .background-sphere:nth-child(2) {
+            width: 400px; height: 400px;
+            bottom: 5%; right: 10%;
+            animation-delay: 5s;
+            animation-duration: 25s;
+        }
+        .background-sphere:nth-child(3) {
+            width: 200px; height: 200px;
+            top: 60%; left: 5%;
+            animation-delay: 10s;
+            animation-duration: 18s;
+        }
+
+        @keyframes floatAndGlow {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.1; }
+            50% { transform: translate(20px, 30px) scale(1.05); opacity: 0.15; }
+            100% { transform: translate(0, 0) scale(1); opacity: 0.1; }
+        }
+
+        /* Main Container - The Glassmorphism Hub */
+        .jarvis-hub {
+            background: var(--app-bg-color);
+            backdrop-filter: blur(var(--blur-strength));
+            -webkit-backdrop-filter: blur(var(--blur-strength)); /* For Safari */
+            border: 1px solid var(--app-border-color);
+            border-radius: var(--border-radius-large);
+            box-shadow: 0 8px 32px var(--box-shadow-strong);
+            padding: 2.5rem;
+            max-width: 90vw;
+            width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            position: relative;
+            z-index: 1;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideInUp 0.8s ease-out 0.5s forwards;
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden; /* For the subtle border animation */
+            padding-bottom: 1rem;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 0%;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--primary-accent), transparent);
+            animation: expandBorder 1.5s ease-out 1s forwards;
+        }
+
+        @keyframes expandBorder {
+            from { width: 0%; }
+            to { width: 80%; }
+        }
+
+        .logo-title {
+            font-family: var(--font-family-header);
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 700;
+            color: var(--text-color);
+            text-shadow: 0 0 15px var(--primary-accent);
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            position: relative;
+        }
+
+        .logo-title span {
+            color: var(--primary-accent);
+        }
+
+        .tagline {
+            font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        /* Navigation */
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-family: var(--font-family-header);
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius-small);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        nav a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--button-bg-hover);
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+
+        nav a:hover::before {
+            left: 0;
+        }
+
+        nav a:hover {
+            color: var(--primary-accent);
+            text-shadow: 0 0 5px var(--primary-accent);
+            transform: translateY(-2px);
+        }
+
+        /* Main Content Grid */
+        .main-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        /* Card Component */
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius-large);
+            padding: 1.5rem;
+            box-shadow: 0 4px 16px var(--box-shadow-light);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: var(--gradient-glow);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .card:hover::before {
+            opacity: 0.1;
+        }
+
+        .card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 8px 24px var(--box-shadow-strong), 0 0 20px var(--primary-accent);
+            border-color: rgba(142, 45, 226, 0.4);
+        }
+
+        .card-header {
+            font-family: var(--font-family-header);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary-accent);
+            text-shadow: 0 0 8px rgba(142, 45, 226, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-header .icon {
+            font-size: 1.8rem;
+            line-height: 1;
+            color: var(--secondary-accent);
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+        }
+
+        /* Button Styling */
+        .jarvis-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--button-bg-normal);
+            border: 1px solid var(--app-border-color);
+            border-radius: var(--border-radius-small);
+            color: var(--button-text-color);
+            font-family: var(--font-family-body);
+            font-size: 0.95rem;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .jarvis-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--primary-accent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+            opacity: 0;
+            z-index: -1;
+        }
+
+        .jarvis-button:hover::before {
+            width: 200%;
+            height: 200%;
+            opacity: 0.2;
+        }
+
+        .jarvis-button:hover {
+            background: var(--button-bg-hover);
+            border-color: var(--primary-accent);
+            color: var(--primary-accent);
+            box-shadow: 0 0 15px rgba(142, 45, 226, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .jarvis-button:active {
+            transform: translateY(0);
+            box-shadow: 0 0 5px rgba(142, 45, 226, 0.5);
+            background: var(--primary-accent); /* Deeper visual feedback */
+            color: #fff;
+        }
+
+        /* Specific Card Styles */
+        #system-status .status-bar-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: var(--border-radius-small);
+            height: 12px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #system-status .status-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3f2b96 0%, #a8c0ff 100%); /* Blue to light blue for progress */
+            border-radius: var(--border-radius-small);
+            width: 0; /* JS will update this */
+            transition: width 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #system-status .status-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+            animation: statusStripes 2s infinite linear;
+        }
+
+        @keyframes statusStripes {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(100%); }
+        }
+
+        #system-status .status-text {
+            font-family: var(--font-family-header);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.25rem;
+        }
+
+        #time-date .display {
+            font-family: var(--font-family-header);
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            color: var(--primary-accent);
+            text-align: center;
+            text-shadow: 0 0 10px rgba(142, 45, 226, 0.7);
+            margin-bottom: 0.5rem;
+        }
+
+        #time-date .date {
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1.5s forwards;
+        }
+
+        /* Responsive Adjustments */
+        @media (min-width: 768px) {
+            .jarvis-hub {
+                grid-template-columns: 1fr 1fr;
+            }
+            header {
+                grid-column: 1 / -1; /* Header spans all columns */
+            }
+            .main-content {
+                grid-column: 1 / -1; /* Main content spans all columns */
+            }
+            footer {
+                grid-column: 1 / -1; /* Footer spans all columns */
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .jarvis-hub {
+                padding: 3rem;
+                grid-template-columns: repeat(3, 1fr); /* More columns for larger screens */
+            }
+            header {
+                grid-column: 1 / -1;
+            }
+            nav ul {
+                gap: 2.5rem;
+            }
+            .main-content {
+                grid-column: 1 / -1;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+            #time-date {
+                grid-column: span 2; /* Make time/date wider */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="background-sphere"></div>
+        <div class="background-sphere"></div>
+        <div class="background-sphere"></div>
+    </div>
+
+    <div class="jarvis-hub">
+        <header>
+            <h1 class="logo-title">J.A.R.V.I.S. <span>Hub</span></h1>
+            <p class="tagline">Interactive System Interface Online</p>
+            <nav>
+                <ul>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#status">Status</a></li>
+                    <li><a href="#tools">Tools</a></li>
+                    <li><a href="#settings">Settings</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <div class="main-content">
+            <div id="time-date" class="card">
+                <h2 class="card-header"><span class="icon">⏰</span> Current Time & Date</h2>
+                <div class="display" id="currentTime">--:--:--</div>
+                <div class="date" id="currentDate">-- --- ----</div>
+            </div>
+
+            <div id="system-status" class="card">
+                <h2 class="card-header"><span class="icon">📊</span> System Status</h2>
+                <p>CPU Usage:</p>
+                <div class="status-bar-container"><div class="status-bar" id="cpuBar"></div></div>
+                <div class="status-text"><span><span id="cpuPercent">0</span>%</span> <span>Optimal</span></div>
+
+                <p style="margin-top: 1rem;">Memory Load:</p>
+                <div class="status-bar-container"><div class="status-bar" id="memBar"></div></div>
+                <div class="status-text"><span><span id="memPercent">0</span>%</span> <span>Stable</span></div>
+            </div>
+
+            <div id="quick-actions" class="card">
+                <h2 class="card-header"><span class="icon">⚡</span> Quick Actions</h2>
+                <p>Execute common commands with a single tap.</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+                    <button class="jarvis-button" data-action="scan">Initiate Scan</button>
+                    <button class="jarvis-button" data-action="optimize">Optimize System</button>
+                    <button class="jarvis-button" data-action="reboot">Reboot Protocol</button>
+                </div>
+            </div>
+
+            <div id="notifications" class="card">
+                <h2 class="card-header"><span class="icon">🔔</span> Notifications</h2>
+                <div id="notification-list">
+                    <p>No new critical alerts.</p>
+                    <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Last check: <span id="lastCheck"></span></p>
+                </div>
+                <button class="jarvis-button" style="margin-top: 1rem;" data-action="clear-notif">Clear All</button>
+            </div>
+        </div>
+
+        <footer>
+            J.A.R.V.I.S. v3.0 - Designed by Tony Stark. All rights reserved.
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to update time and date
+            const updateDateTime = () => {
+                const now = new Date();
+                const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+                const dateOptions = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+
+                document.getElementById('currentTime').textContent = now.toLocaleTimeString('en-US', timeOptions);
+                document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', dateOptions);
+                document.getElementById('lastCheck').textContent = now.toLocaleTimeString('en-US', timeOptions);
+            };
+
+            // Update time and date immediately and then every second
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+
+            // Simulate system status updates
+            const updateSystemStatus = () => {
+                const cpuBar = document.getElementById('cpuBar');
+                const cpuPercent = document.getElementById('cpuPercent');
+                const memBar = document.getElementById('memBar');
+                const memPercent = document.getElementById('memPercent');
+
+                // Simulate CPU usage between 20-80%
+                const currentCpu = Math.floor(Math.random() * 60) + 20;
+                cpuBar.style.width = `${currentCpu}%`;
+                cpuPercent.textContent = currentCpu;
+
+                // Simulate Memory load between 15-70%
+                const currentMem = Math.floor(Math.random() * 55) + 15;
+                memBar.style.width = `${currentMem}%`;
+                memPercent.textContent = currentMem;
+            };
+
+            // Update system status immediately and then every 3 seconds
+            updateSystemStatus();
+            setInterval(updateSystemStatus, 3000);
+
+            // Quick Actions Button Interactions
+            document.querySelectorAll('.jarvis-button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const action = button.dataset.action;
+                    let message = '';
+
+                    // Simple ripple effect for click
+                    const ripple = document.createElement('span');
+                    ripple.classList.add('ripple');
+                    const rect = button.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+
+                    ripple.style.width = ripple.style.height = `${size}px`;
+                    ripple.style.left = `${x}px`;
+                    ripple.style.top = `${y}px`;
+                    button.appendChild(ripple);
+
+                    ripple.addEventListener('animationend', () => {
+                        ripple.remove();
+                    });
+
+                    switch (action) {
+                        case 'scan':
+                            message = 'Initiating system scan... please wait.';
+                            break;
+                        case 'optimize':
+                            message = 'System optimization in progress...';
+                            break;
+                        case 'reboot':
+                            message = 'Reboot sequence initiated. Standby.';
+                            break;
+                        case 'clear-notif':
+                            const notificationList = document.getElementById('notification-list');
+                            notificationList.innerHTML = '<p>All notifications cleared.</p>';
+                            message = 'Notifications cleared.';
+                            break;
+                        default:
+                            message = `Action "${action}" triggered.`;
+                    }
+                    console.log(message); // For debugging
+                    alert(`J.A.R.V.I.S.: ${message}`); // Simple user feedback
+                });
+            });
+
+            // Add ripple effect CSS dynamically
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .jarvis-button {
+                    position: relative;
+                    overflow: hidden;
+                }
+                .jarvis-button .ripple {
+                    position: absolute;
+                    border-radius: 50%;
+                    transform: scale(0);
+                    animation: ripple-effect 0.6s linear;
+                    background-color: rgba(255, 255, 255, 0.7);
+                    z-index: 2; /* Ensure ripple is above background hover effect */
+                }
+                @keyframes ripple-effect {
+                    to {
+                        transform: scale(4);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>
