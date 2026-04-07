@@ -3,566 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>J.A.R.V.I.S. Tetris Nexus</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕹️</text></svg>">
+    <title>J.A.R.V.I.S. TETRIS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
-
         :root {
-            --glass-bg: rgba(255, 255, 255, 0.08);
-            --glass-border: rgba(255, 255, 255, 0.15);
-            --glass-shadow: rgba(0, 0, 0, 0.2);
-            --text-color-primary: #e0e0e0;
-            --text-color-secondary: #a0a0a0;
-            --accent-color-1: #00bcd4; /* Cyan */
-            --accent-color-1-rgb: 0, 188, 212; /* Cyan for rgba */
-            --accent-color-2: #ff4081; /* Pink */
-            --accent-color-2-rgb: 255, 64, 129; /* Pink for rgba */
-            --accent-color-3: #7c4dff; /* Deep Purple */
-            --gradient-start: #1a0033; /* Dark Purple */
-            --gradient-end: #000a1a;   /* Dark Blue */
-            --glow-color: #00e5ff;
+            --bg-color-dark: #1a1a2e;
+            --bg-color-light: #0f3460;
+            --glass-bg-start: rgba(255, 255, 255, 0.1);
+            --glass-bg-end: rgba(255, 255, 255, 0.05);
+            --border-color: rgba(255, 255, 255, 0.25);
+            --text-color: #e0e0e0;
+            --accent-color: #e94560;
+            --primary-button-bg: #e94560;
+            --primary-button-hover: #ff6a80;
+            --secondary-button-bg: #007bff;
+            --secondary-button-hover: #009dff;
+            --shadow-color: rgba(0, 0, 0, 0.5);
             --font-display: 'Orbitron', sans-serif;
-            --font-mono: 'Roboto Mono', monospace;
-            --block-i: #00e5ff; /* Lighter Cyan */
-            --block-j: #3f51b5; /* Indigo */
-            --block-l: #ff9800; /* Orange */
-            --block-o: #ffeb3b; /* Yellow */
-            --block-s: #4caf50; /* Green */
-            --block-t: #9c27b0; /* Purple */
-            --block-z: #f44336; /* Red */
-            --block-ghost: rgba(255, 255, 255, 0.1);
-            --block-empty: rgba(0, 0, 0, 0.3);
-            --block-border: rgba(255, 255, 255, 0.1);
-            --game-board-bg: rgba(0, 0, 0, 0.4);
+            --font-body: 'Roboto Mono', monospace;
+            --board-border-width: 4px;
+            --transition-speed: 0.3s;
+            --border-radius-lg: 25px;
+            --border-radius-md: 15px;
+            --border-radius-sm: 8px;
         }
 
-        /* Global Reset & Base Styles */
         *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        html {
-            scroll-behavior: smooth;
-            font-size: 16px; /* Base for rem units */
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: var(--font-body);
+            color: var(--text-color);
+            background: linear-gradient(135deg, var(--bg-color-dark) 0%, var(--bg-color-light) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            line-height: 1.5;
         }
 
-        body {
-            font-family: var(--font-mono);
-            color: var(--text-color-primary);
-            background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
-            min-height: 100vh;
+        .container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            overflow-x: hidden;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            padding-bottom: 2rem;
-        }
-
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: var(--accent-color-1); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--glow-color); }
-
-        /* Text Selection */
-        ::selection { background-color: var(--accent-color-2); color: var(--gradient-start); }
-
-        /* Layout Container */
-        .container {
-            width: 90%;
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 1.5rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-            justify-content: center;
-            align-items: flex-start;
-        }
-
-        /* Glassmorphism Card Base */
-        .glass-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            backdrop-filter: blur(15px) saturate(180%);
-            -webkit-backdrop-filter: blur(15px) saturate(180%);
-            box-shadow: 0 8px 32px 0 var(--glass-shadow);
-            padding: 2rem;
-            transition: all 0.3s ease-in-out;
-            transform: translateZ(0); /* Force hardware acceleration */
-            flex-grow: 1;
-            min-width: 280px;
-            max-width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            overflow: hidden;
+            gap: 20px;
+            max-width: 95%;
+            width: 1200px;
+            padding: 25px;
+            background: linear-gradient(145deg, var(--glass-bg-start), var(--glass-bg-end));
+            border-radius: var(--border-radius-lg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 12px 40px var(--shadow-color);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            animation: fadeIn 1s ease-out forwards;
+            transform-style: preserve-3d;
+            perspective: 1000px;
             position: relative;
+            z-index: 1;
         }
 
-        .glass-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.05) 100%);
-            z-index: -1;
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
-        .glass-card:hover {
-            box-shadow: 0 12px 48px 0 var(--glass-shadow), 0 0 20px var(--glow-color);
-            transform: translateY(-5px) scale(1.01) translateZ(0);
-        }
-
-        /* Typography */
-        h1, h2, h3 {
-            font-family: var(--font-display);
-            color: var(--accent-color-1);
-            text-align: center;
-            margin-bottom: 1rem;
-            text-shadow: 0 0 8px var(--glow-color), 0 0 15px rgba(var(--accent-color-1-rgb), 0.5);
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         h1 {
-            font-size: clamp(2.5rem, 6vw, 4rem);
-            margin-top: 1rem;
-            margin-bottom: 2rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        h2 {
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            margin-bottom: 1.5rem;
-            text-shadow: 0 0 6px var(--glow-color), 0 0 10px rgba(var(--accent-color-1-rgb), 0.4);
-        }
-
-        h3 {
-            font-size: clamp(1.2rem, 3vw, 1.8rem);
-            color: var(--accent-color-2);
-            text-shadow: 0 0 4px rgba(var(--accent-color-2-rgb), 0.6);
-        }
-
-        p {
-            font-size: 0.95rem;
-            color: var(--text-color-secondary);
-            margin-bottom: 1rem;
-        }
-
-        /* Game Section */
-        .game-section {
-            flex-basis: 600px;
-            max-width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-        }
-
-        .game-board-container {
-            position: relative;
-            width: 100%;
-            max-width: 300px; /* Base for 10x20 blocks of 30px */
-            aspect-ratio: 10 / 20;
-            margin-bottom: 1.5rem;
-            background: var(--game-board-bg);
-            border: 2px solid var(--accent-color-1);
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 0 15px var(--glow-color);
-            transition: all 0.3s ease-in-out;
-            flex-shrink: 0;
-            margin: 0 auto 1.5rem auto;
-        }
-
-        #gameCanvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background-color: var(--block-empty);
-            image-rendering: pixelated;
-            border-radius: 6px;
-        }
-
-        #gameOverScreen {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            z-index: 10;
-            border-radius: 8px;
-            animation: fadeIn 0.5s ease-out;
-        }
-        #gameOverScreen h3 {
-            color: var(--accent-color-2);
-            margin-bottom: 1rem;
-            font-size: 2rem;
-            text-shadow: 0 0 10px var(--accent-color-2), 0 0 20px rgba(var(--accent-color-2-rgb), 0.5);
-        }
-        #gameOverScreen p {
-            color: var(--text-color-primary);
-            font-size: 1.2rem;
-            margin-bottom: 1.5rem;
-        }
-        #gameOverScreen #finalScore {
             font-family: var(--font-display);
-            color: var(--glow-color);
-            font-size: 2.5rem;
-            text-shadow: 0 0 10px var(--glow-color);
+            color: var(--accent-color);
+            text-shadow: 0 0 12px var(--accent-color), 0 0 25px var(--accent-color), 0 0 40px rgba(233, 69, 96, 0.5);
+            margin-bottom: 15px;
+            font-size: 2.8em;
+            letter-spacing: 3px;
+            animation: pulse 2.5s infinite alternate ease-in-out;
+            transform: translateZ(25px);
         }
 
-        /* Game Info Panel */
-        .game-info-panel {
+        @keyframes pulse {
+            0% { text-shadow: 0 0 8px var(--accent-color), 0 0 18px var(--accent-color); }
+            100% { text-shadow: 0 0 18px var(--accent-color), 0 0 35px var(--accent-color), 0 0 50px rgba(233, 69, 96, 0.6); }
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 25px;
+            width: 100%;
+            max-width: 1000px;
+            align-items: flex-start;
+            margin-top: 20px;
+            transform: translateZ(15px);
+        }
+
+        .sidebar {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
-            width: 100%;
-            max-width: 250px;
-            flex-basis: 300px;
-            padding: 1.5rem 1rem;
+            gap: 20px;
+            padding: 20px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            border-radius: var(--border-radius-md);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 6px 20px var(--shadow-color);
+            transform: translateZ(8px);
+            transition: all var(--transition-speed) ease;
         }
 
-        .info-card {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            backdrop-filter: blur(10px) saturate(150%);
-            -webkit-backdrop-filter: blur(10px) saturate(150%);
-            box-shadow: 0 4px 16px 0 var(--glass-shadow);
-            padding: 1rem 1.5rem;
+        .sidebar:hover {
+            box-shadow: 0 8px 25px var(--shadow-color);
+            transform: translateZ(10px) translateY(-2px);
+        }
+
+        .sidebar-item {
             text-align: center;
-            transition: all 0.2s ease-in-out;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: var(--border-radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             position: relative;
             overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
         }
 
-        .info-card:hover {
+        .sidebar-item:hover {
             transform: translateY(-3px);
-            box-shadow: 0 6px 24px 0 var(--glass-shadow), 0 0 10px var(--accent-color-3);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.3);
         }
 
-        .info-card h3 {
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-            color: var(--accent-color-2);
-            text-shadow: none;
-        }
-
-        .info-card p {
-            font-family: var(--font-display);
-            font-size: 1.8rem;
-            color: var(--glow-color);
-            text-shadow: 0 0 5px var(--glow-color);
-            margin: 0;
-        }
-
-        #nextPieceCanvas {
-            width: 100px;
-            height: 100px;
-            background-color: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            margin: 0.5rem auto 1rem auto;
-            display: block;
-            image-rendering: pixelated;
-        }
-
-        /* Buttons */
-        .game-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 1.5rem;
-            width: 100%;
-        }
-
-        .btn {
-            background: linear-gradient(45deg, var(--accent-color-1), var(--accent-color-3));
-            color: var(--text-color-primary);
-            border: none;
-            border-radius: 10px;
-            padding: 0.8rem 1.5rem;
-            font-family: var(--font-display);
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            position: relative;
-            overflow: hidden;
-            z-index: 1;
-            outline: none;
-        }
-
-        .btn::before {
+        .sidebar-item::before {
             content: '';
             position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-            transition: 0.5s;
-            z-index: -1;
-        }
-
-        .btn:hover::before { left: 100%; }
-        .btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), 0 0 15px var(--glow-color); }
-        .btn:active { transform: translateY(0); box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); }
-
-        .btn-start-reset {
-            min-width: 180px;
-            font-size: 1.2rem;
-            padding: 1rem 2rem;
-            background: linear-gradient(45deg, var(--accent-color-2), var(--accent-color-3));
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-        }
-        .btn-start-reset:hover { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), 0 0 20px var(--accent-color-2); }
-        .btn-start-reset:disabled {
-            background: linear-gradient(45deg, #555, #777);
-            cursor: not-allowed;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            transform: none;
-        }
-        .btn-start-reset:disabled::before { display: none; }
-
-        /* Mobile Controls */
-        .mobile-controls {
-            display: none; /* Hidden by default, shown on mobile */
-            margin-top: 2rem;
-            width: 100%;
-            max-width: 400px;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1rem;
-        }
-
-        .mobile-controls button {
-            flex-basis: 45%;
-            height: 60px;
-            font-size: 1.2rem;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(var(--accent-color-1-rgb), 0.7);
-            border: 1px solid rgba(var(--accent-color-1-rgb), 0.9);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.2s ease;
-            color: white;
-            text-shadow: 0 0 5px rgba(0,0,0,0.5);
-            -webkit-tap-highlight-color: transparent;
-            border-radius: 10px;
-            font-family: var(--font-display);
-        }
-        .mobile-controls button:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
-        .mobile-controls button:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(0,0,0,0.2); background: rgba(var(--accent-color-1-rgb), 0.9); }
-        .mobile-controls button.move-down {
-            flex-basis: 95%;
-            background: rgba(var(--accent-color-2-rgb), 0.7);
-            border: 1px solid rgba(var(--accent-color-2-rgb), 0.9);
-        }
-        .mobile-controls button.move-down:active { background: rgba(var(--accent-color-2-rgb), 0.9); }
-
-
-        /* Instructions Section */
-        .instructions-section {
-            flex-basis: 400px;
-            max-width: 100%;
-        }
-        .instructions-section ul {
-            list-style: none;
-            padding-left: 0;
-            margin-top: 1rem;
-        }
-        .instructions-section li {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 0.8rem 1.2rem;
-            margin-bottom: 0.5rem;
-            border-radius: 10px;
-            border-left: 3px solid var(--accent-color-1);
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
-        .instructions-section li:hover {
-            border-left-color: var(--accent-color-2);
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateX(5px);
-        }
-        .instructions-section li strong {
-            color: var(--accent-color-1);
-            font-family: var(--font-display);
-            min-width: 70px;
-            text-align: right;
-        }
-        .instructions-section li span {
-            color: var(--text-color-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Footer */
-        .footer {
-            width: 100%;
-            text-align: center;
-            padding: 1.5rem;
-            color: var(--text-color-secondary);
-            font-size: 0.85rem;
-            margin-top: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .footer a {
-            color: var(--accent-color-1);
-            text-decoration: none;
-            transition: color 0.2s ease;
-        }
-        .footer a:hover {
-            color: var(--glow-color);
-            text-decoration: underline;
-        }
-
-        /* Animations */
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 10px var(--glow-color), 0 0 0px var(--glow-color); }
-            50% { box-shadow: 0 0 20px var(--glow-color), 0 0 30px var(--glow-color); }
-            100% { box-shadow: 0 0 10px var(--glow-color), 0 0 0px var(--glow-color); }
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes lineClear {
-            0% { opacity: 1; transform: scaleX(1); }
-            50% { opacity: 0; transform: scaleX(0); }
-            100% { opacity: 0; transform: scaleX(0); }
-        }
-
-        .game-board-container.game-over {
-            animation: pulseGlow 1.5s infinite ease-in-out;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-                margin: 1rem auto;
-                padding: 1rem;
-            }
-            .glass-card {
-                padding: 1.5rem;
-                min-width: unset;
-                width: 100%;
-            }
-            .game-section { order: 1; }
-            .game-info-panel { order: 2; max-width: 100%; }
-            .instructions-section { order: 3; }
-
-            .game-controls { display: none; } /* Hide desktop controls */
-            .mobile-controls { display: flex; } /* Show mobile controls */
-
-            h1 { font-size: clamp(2rem, 8vw, 3.5rem); margin-bottom: 1.5rem; }
-            h2 { font-size: clamp(1.5rem, 6vw, 2rem); }
-        }
-
-        @media (max-width: 480px) {
-            body { padding-bottom: 1rem; }
-            .container { padding: 0.5rem; gap: 1rem; }
-            .glass-card { padding: 1rem; }
-            h1 { margin-top: 0.5rem; margin-bottom: 1rem; }
-            .game-board-container { margin-bottom: 1rem; max-width: 250px; }
-            .game-info-panel { padding: 1rem 0.5rem; }
-            .info-card h3 { font-size: 1rem; }
-            .info-card p { font-size: 1.5rem; }
-            .mobile-controls button { height: 50px; font-size: 1rem; }
-        }
-    </style>
-</head>
-<body>
-    <h1>J.A.R.V.I.S. Tetris Nexus</h1>
-
-    <div class="container">
-        <section class="game-section glass-card">
-            <h2>The Grid</h2>
-            <div class="game-board-container">
-                <canvas id="gameCanvas" width="300" height="600"></canvas>
-                <div id="gameOverScreen">
-                    <h3>GAME OVER!</h3>
-                    <p>Your final score:</p>
-                    <p id="finalScore">0</p>
-                    <button class="btn btn-start-reset" id="resetGameBtn">Restart Game</button>
-                </div>
-            </div>
-            <div class="game-controls">
-                <button class="btn btn-start-reset" id="startGameBtn">Start Game</button>
-                <button class="btn" id="pauseGameBtn">Pause</button>
-            </div>
-            <div class="mobile-controls">
-                <button id="mobileRotateBtn">Rotate</button>
-                <button id="mobileLeftBtn">Left</button>
-                <button id="mobileRightBtn">Right</button>
-                <button id="mobileDownBtn" class="move-down">Soft Drop</button>
-            </div>
-        </section>
-
-        <aside class="game-info-panel">
-            <div class="info-card">
-                <h3>Score</h3>
-                <p id="scoreDisplay">0</p>
-            </div>
-            <div class="info-card">
-                <h3>Lines</h3>
-                <p id="linesDisplay">0</p>
-            </div>
-            <div class="info-card">
-                <h3>Level</h3>
-                <p id="levelDisplay">1</p>
-            </div>
-            <div class="info-card">
-                <h3>Next Piece</h3>
-                <canvas id="nextPieceCanvas" width="100" height="100"></canvas>
-            </div>
-        </aside>
-
-        <section class="instructions-section glass-card">
-            <h2>Instructions</h2>
-            <ul>
-                <li><strong>Start/Pause</strong> <span>Click the buttons below the game.</span></li>
-                <li><strong>Arrow Left</strong> <span>Move piece left</span></li>
-                <li><strong>Arrow Right</strong> <span>Move piece right</span></li>
-                <li><strong>Arrow Up</strong> <span>Rotate piece</span></li>
-                <li><strong>Arrow Down</strong> <span>Soft drop (faster descent)</span></li>
-                <li><strong>Spacebar</strong> <span>Hard drop (instant descent)</span></li>
-            </ul>
-        </section>
-    </div>
-
-    <footer class="footer">
-        J.A.R.V.I.S. Tetris Nexus &copy; 2023. All rights reserved. Designed by <a href="https://github.com/your-github" target="_blank" rel="noopener noreferrer">Tony Stark</a>.
-    </footer>
-
-    <script>
-        // J.A.R.V.I.S. Tetris Core Logic Initializing...
-        const ROWS = 20;
-        const COLS = 10;
-        const BLOCK_SIZE = 30; // pixels
-        const GAME_WIDTH = COLS * BLOCK_SIZE;
-        const GAME_HEIGHT = ROWS * BLOCK_SIZE;
-
-        const COLORS = {
-            I:
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.07) 0%, transparent 70%);
+            animation: rotateLight 20s linear infinite;
+            opacity: 0.6;
+            z-index: 0;
+            pointer-events: none
